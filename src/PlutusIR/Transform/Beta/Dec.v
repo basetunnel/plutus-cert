@@ -25,55 +25,60 @@ Definition app_ctx_dec := list (term * (term -> bool)).
 
 Section DEC.
 
-Context
-  (dec : app_ctx_dec -> term -> term -> bool)
-  (C : app_ctx_dec)
-  (t t' : term)
-.
+  (* Decision procedures for each of the constructors in beta
+   *)
 
-Definition dec_compat : bool :=
-  match C, t, t' with
-  | [], t, t' => Compat.dec (dec []) t t'
-  | _, _, _ => false
-  end
+  Context
+    (dec : app_ctx_dec -> term -> term -> bool)
+    (C : app_ctx_dec)
+    (t t' : term)
   .
 
-Definition dec_Apply : bool :=
-  match C, t, t' with
-  | C, Apply s t, r => dec ((t, dec [] t) :: C) s r
-  | _, _, _ => false
-  end
-.
+  Definition dec_compat : bool :=
+    match C, t, t' with
+    | [], t, t' => Compat.dec (dec []) t t'
+    | _, _, _ => false
+    end
+    .
 
-Definition dec_TyAbs_TyInst : bool :=
-  match C, t, t' with
-  | []
-  , TyInst (TyAbs X K t) T
-  , Let NonRec [TypeBind (TyVarDecl X' K') T'] t'
-  =>
-      String.eqb X X' &&
-      Kind_eqb K K' &&
-      Ty_eqb T T' &&
-      dec [] t t'
-  | _, _, _ => false
-  end.
+  Definition dec_Apply : bool :=
+    match C, t, t' with
+    | C, Apply s t, r => dec ((t, dec [] t) :: C) s r
+    | _, _, _ => false
+    end
+  .
 
-Definition dec_LamAbs : bool :=
-  match C, t, t' with
-  | (t0, dec_t0) :: C
-  , LamAbs x T t
-  , Let NonRec [TermBind Strict (VarDecl x' T') t0'] t'
-  =>
-      String.eqb x x' &&
-      Ty_eqb T T' &&
-      dec_t0 t0' &&
-      dec C t t' &&
-      forallb (fun '(t, f) => negb (in_str x (Term.fv t))) C
-  | _, _, _ => false
-  end
-.
+  Definition dec_TyAbs_TyInst : bool :=
+    match C, t, t' with
+    | []
+    , TyInst (TyAbs X K t) T
+    , Let NonRec [TypeBind (TyVarDecl X' K') T'] t'
+    =>
+        String.eqb X X' &&
+        Kind_eqb K K' &&
+        Ty_eqb T T' &&
+        dec [] t t'
+    | _, _, _ => false
+    end.
+
+  Definition dec_LamAbs : bool :=
+    match C, t, t' with
+    | (t0, dec_t0) :: C
+    , LamAbs x T t
+    , Let NonRec [TermBind Strict (VarDecl x' T') t0'] t'
+    =>
+        String.eqb x x' &&
+        Ty_eqb T T' &&
+        dec_t0 t0' &&
+        dec C t t' &&
+        forallb (fun '(t, f) => negb (in_str x (Term.fv t))) C
+    | _, _, _ => false
+    end
+  .
 
 End DEC.
+
+
 
 Fixpoint dec (C : app_ctx_dec) (t t' : term) : bool :=
      dec_compat dec C t t'
@@ -82,7 +87,7 @@ Fixpoint dec (C : app_ctx_dec) (t t' : term) : bool :=
   || dec_TyAbs_TyInst dec C t t'
 .
 
-Definition dec_unfold C t t' :
+Lemma dec_unfold C t t' :
   dec C t t' =
      dec_compat dec C t t'
   || dec_Apply dec C t t'
@@ -93,13 +98,21 @@ Proof.
   destruct C, t, t'; reflexivity.
 Qed.
 
+
+
 Section SOUND.
+
+  (* Soudness proofs for each of the constructor's decision procedure *)
 
   (* Defines when an argument in the (extended) application context has a
      sound decision procedure
   *)
   Definition arg_sound '(t, dec_t) :=
     forall t', dec_t t' = true -> betas [] t t'.
+
+  #[local]
+  Hint Unfold arg_sound : core.
+
 
   Lemma Forall_map_fst {A} (f : term -> Prop) (l : list (term * A)):
     Forall (fun '(t, _) => f t) l ->
@@ -112,19 +125,6 @@ Section SOUND.
       constructor; auto.
   Qed.
 
-
-
-  Lemma negb_in_str__NotIn x xs :
-    negb (in_str x xs) = true ->
-    x ∉ xs
-  .
-  Proof.
-    induction xs.
-    - simpl. auto.
-    - intros.
-      rewrite negb_iff in *.
-      admit.
-  Admitted.
 
   Context
     (dec : app_ctx_dec -> term -> term -> bool)
@@ -139,16 +139,14 @@ Section SOUND.
 
   Lemma dec_sound_Apply : dec_Apply dec C t t' = true -> betas (map fst C) t t'.
   Proof.
-    specialize (dec_sound []) as dec_sound_nil.
     unfold dec_Apply.
     destruct_match; try solve [inversion 1].
     intros H_dec.
+    apply b_Apply.
     apply dec_sound in H_dec.
-    - auto using betas.
-    - constructor; try assumption.
-      simpl.
-      intros.
-      apply dec_sound_nil;auto.
+    - auto.
+    - specialize (dec_sound []) as dec_sound_nil. (* specialize IH for argument in list *)
+      auto using Forall.
   Defined.
 
   Lemma dec_sound_LamAbs : dec_LamAbs dec C t t' = true -> betas (map fst C) t t'.
@@ -181,24 +179,10 @@ Section SOUND.
     betas (map fst C) t t'.
   Proof.
     unfold dec_TyAbs_TyInst.
-    destruct t, C; try solve [inversion 1].
-    destruct t0; try solve [inversion 1].
-    destruct t'; try solve [inversion 1].
-    destruct r; try solve [inversion 1].
-    destruct l; try solve [inversion 1].
-    destruct b0; try solve [inversion 1].
-    destruct t3; try solve [inversion 1].
-    destruct l; try solve [inversion 1].
-    intros H_dec.
-    destruct_hypos.
-    rewrite String.eqb_eq in H.
-    rewrite Kind_eqb_eq in H2.
-    rewrite Ty_eqb_eq in H1.
-    subst.
-    simpl.
-    apply beta_TyInst_TyAbs.
-    specialize (dec_sound []).
-    auto.
+    repeat (destruct_match; try solve [inversion 1]).
+    specialize (dec_sound []). (* specialize IH *)
+    intro; destruct_hypos.
+    apply b_TyInst_TyAbs; auto with reflection.
   Defined.
 
 
@@ -261,9 +245,6 @@ Proof.
   setoid_rewrite dec_unfold.
   repeat rewrite orb_true_iff.
   intros C_sound H_dec.
-  destruct H_dec as [[[H_dec | H_dec] | H_dec] | H_dec ].
-  - apply dec_sound_compat in H_dec; auto with beta.
-  - apply dec_sound_Apply in H_dec; auto with beta.
-  - apply dec_sound_LamAbs in H_dec; auto with beta.
-  - apply dec_sound_TyBeta in H_dec; auto with beta.
+  repeat destruct H_dec as [ H_dec | H_dec ];
+  eauto 2 with beta_sound. (* Search becomes inefficient, probably because it doesn't know in what order to try the dec_sound lemmas  *)
 Defined.

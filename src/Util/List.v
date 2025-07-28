@@ -48,6 +48,14 @@ Definition in_str (x : string) (xs : list string) : bool :=
   if find (eqb x) xs then true else false
 .
 
+Lemma in_str__false_hd x y ys : in_str x (y::ys) = false -> x =? y = false.
+Proof.
+Admitted.
+
+Lemma in_str__false_tl x y ys : in_str x (y::ys) = false -> in_str x ys = false.
+Proof.
+Admitted.
+
 Lemma in_str__In {x xs} : in_str x xs = true <-> In x xs.
 Proof.
   split.
@@ -68,6 +76,26 @@ Proof.
       * unfold in_str; simpl.
         destruct (x =? a); auto.
 Qed.
+
+
+Lemma negb_in_str__NotIn x xs :
+  negb (in_str x xs) = true ->
+  x ∉ xs
+.
+Proof.
+  induction xs.
+  - simpl. auto.
+  - intros.
+    intro H_in.
+    rewrite negb_iff in *.
+    destruct H_in as [H_eq | H_tail].
+    + apply in_str__false_hd in H.
+      apply eq_sym, eqb_eq in H_eq.
+      congruence.
+    + apply in_str__false_tl in H.
+      intuition.
+Qed.
+
 
 
 Lemma app_cons_app_app {A} xs ys (x : A) :
@@ -723,10 +751,10 @@ Fixpoint mdrop {X:Type} (ns : list string) (nxs: list (string * X)) : list (stri
       mdrop ns' (drop n nxs)
   end.
 
-Definition forall2b {A} (p : A -> A -> bool) := fix f xs ys :=
+Function forall2b {A} (p : A -> A -> bool) (xs : list A) (ys : list A) : bool := 
   match xs, ys with
     | []       , []        => true
-    | (x :: xs), (y :: ys) => (p x y && f xs ys)%bool
+    | (x :: xs), (y :: ys) => (p x y && forall2b p xs ys)%bool
     | _        , _         => false
   end.
 

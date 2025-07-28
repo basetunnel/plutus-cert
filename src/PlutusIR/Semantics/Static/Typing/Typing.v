@@ -114,6 +114,10 @@ Inductive has_type : list (binderTyname * kind) -> list (binderName * ty) -> ter
       Δ ,, Γ |-+ (Apply t1 t2) : T2n
   (* Universal types *)
   | T_TyAbs : forall Δ Γ X K t Tn,
+      (* Note: Γ is restricted here, so that no term variables mentioning X in
+       * their type are allowed in scope, since their type could be captured by
+       * this "new" ΛX
+       *)
       ((X, K) :: Δ) ,, (drop_ty_var X Γ) |-+ t : Tn ->
       Δ ,, Γ |-+ (TyAbs X K t) : (Ty_Forall X K Tn)
   | T_TyInst : forall Δ Γ t1 T2 T1n X K2 T0n T2n,
