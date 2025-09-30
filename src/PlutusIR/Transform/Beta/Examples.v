@@ -84,7 +84,7 @@ Definition x :=
   let_
     [type "X" :* ★ = ty_unit]
     let_
-      ["y" : (Ty_Var "X") = unit]
+      ["y" : (Ty_Var "X") != unit]
       `"y"
 .
 

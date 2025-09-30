@@ -15,22 +15,24 @@ Section Substitution.
   Context
     (x x' : string)
     (s s' : term)
-    (H_s : alpha [] s s')
+    (H_s : [] ,, [] ⊢ s ~ s')
   .
 
   Lemma alpha__subst : forall t t',
-    alpha [(x, x')] t t' ->
-    alpha [] (subst x s t) (subst x' s' t')
+    [] ,, [(x, x')] ⊢ t ~ t' ->
+    [] ,, [] ⊢ (subst x s t) ~ (subst x' s' t')
   .
   Proof.
     intros t.
     apply term__ind with
-      (P := fun t => forall t', alpha [(x, x')] t t' -> alpha [] (subst x s t) (subst x' s' t'))
+      (P := fun t => forall t',
+              [] ,, [(x, x')] ⊢ t ~ t' ->
+              [] ,, [] ⊢ (subst x s t) ~ (subst x' s' t')
+      )
       (Q := fun b => True).
 
-    (* Solve unimplemented cases *)
-    all: try solve [intros; match goal with H : alpha _ _ _ |- _ => inversion H end].
-
+    - (* Let *)
+      admit.
     - (* Var *)
       intros y t' H_t.
       inversion H_t. subst x0 t'.
@@ -39,20 +41,20 @@ Section Substitution.
       destruct ((x =? y)%string) eqn:H_eq; destruct ((x' =? y')%string) eqn:H_eq'; simpl.
       * assumption.
       * rewrite eqb_eq, eqb_neq in *.
-        inversion H1; contradiction.
+        inversion H0; contradiction.
       * rewrite eqb_eq, eqb_neq in *.
-        inversion H1; contradiction.
+        inversion H0; contradiction.
       * rewrite eqb_neq in *.
-        inversion H1. subst.
+        inversion H0. subst.
         ** contradiction.
         ** subst.
-           inversion H8. subst.
-           auto using alpha.
-
+           inversion H7.
+    - (* TyAbs *)
+      admit.
     - (* LamAbs *)
       intros y T u IH_u t' H_t.
       inversion H_t;
-      subst x0 T0 t0 t' Γ;
+      subst x0 T0 t0 t';
       rename x'0 into y';
       rename t'0 into u'.
       setoid_rewrite subst_unfold.
@@ -76,9 +78,9 @@ Admitted.
 *)
 
 Lemma alpha__compute_defaultfun {t t' v} :
-  alpha [] t t' ->
+  [] ,, [] ⊢ t ~ t' ->
   compute_defaultfun t = Some v -> exists v',
-  compute_defaultfun t' = Some v' /\ alpha [] v v'
+  compute_defaultfun t' = Some v' /\ [] ,, [] ⊢ v ~ v'
 .
 Admitted.
 
@@ -88,27 +90,28 @@ Admitted.
 *)
 
 Lemma alpha__value v v' :
-  alpha [] v v' ->
+  [] ,, [] ⊢ v ~ v' ->
   value v ->
   value v'
 .
 Admitted.
 
 Lemma alpha__is_error t t' :
-  alpha [] t t' ->
+  [] ,, [] ⊢ t ~ t' ->
   is_error t ->
   is_error t'
 .
 Proof.
   intros.
   inversion H0; subst.
-  inversion H.
+  inversion H; subst.
+  constructor.
 Qed.
 
 Lemma alpha__eval t t' r i:
-  alpha [] t t' ->
+  [] ,, [] ⊢ t ~ t' ->
   t  =[i]=> r -> exists r',
-  t' =[i]=> r' /\ alpha [] r r'.
+  t' =[i]=> r' /\ [] ,, [] ⊢ r ~ r'.
 Proof.
   intros H_alpha H_eval.
   revert H_alpha.
@@ -124,7 +127,7 @@ Proof.
     rename t0 into t.
     rename v0 into r.
     rename v2 into r2.
-    inversion H_alpha as [ | | ? ? ? ? ? H_alpha_t1 H_alpha_t2 ]; subst.
+    inversion H_alpha as [ | | ? ? ? ? H_alpha_t1 H_alpha_t2 | | | | | | | | | | ]; subst.
 
     (* Use IH1*)
     specialize (IHH_eval1 _ H_alpha_t1) as [r1' [H_t1'_eval H_t1'_alpha]].
@@ -135,7 +138,7 @@ Proof.
     (* Use IH3 *)
     specialize (IHH_eval3 (subst x' r2' t')).
 
-    assert (H_subst : alpha [] (subst x r2 t) (subst x' r2' t')). {
+    assert (H_subst : [] ,, [] ⊢ (subst x r2 t) ~ (subst x' r2' t')). {
       apply alpha__subst; assumption.
     }
 
@@ -149,7 +152,7 @@ Proof.
       * exact H_t2'_eval.
       * intro.
         apply H0.
-        apply alpha_sym with (ys := []) in H_t2'_alpha; try constructor.
+        apply alpha_sym with (Γ := []) (Γ' := []) (Δ := []) (Δ' := [])in H_t2'_alpha; try constructor.
         eauto using alpha__is_error.
       * assumption.
     + assumption.

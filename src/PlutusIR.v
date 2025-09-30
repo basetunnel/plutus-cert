@@ -1167,7 +1167,7 @@ Module PIRNotations.
 
   Module Bindings.
 
-    Notation "vd '=' t" :=
+    Notation "vd '!=' t" :=
       (TermBind Strict vd t)
       (at level 70, t at next level, no associativity)
       : pir_scope
@@ -1293,7 +1293,7 @@ Module PIRNotations.
     Definition t :=
       let_
         [ type ("X" :* ★) = ty_unit;
-          ("y" : ty_unit) = `"x"
+          ("y" : ty_unit) != `"x"
         ]
         s.
   End Examples.

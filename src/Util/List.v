@@ -816,6 +816,17 @@ Proof.
       auto using Forall2.
 Qed.
 
+
+Inductive Forall3 [A B C : Type] (R : A -> B -> C -> Prop) : list A -> list B -> list C -> Prop :=
+  | Forall3_nil : Forall3 R [] [] []
+  | Forall3_cons : forall (x : A) (y : B) (z : C) (l : list A) (l' : list B) (l'' : list C),
+                   R x y z -> Forall3 R l l' l'' -> Forall3 R (x :: l) (y :: l') (z :: l'').
+
+Arguments Forall3_nil [A B C]%type_scope R%function_scope.
+Arguments Forall3_cons [A B C]%type_scope [R]%function_scope
+  x y z [l l' l'']%list_scope _ _.
+
+
 Lemma mdrop_nil : forall X ns,
     @mdrop X ns nil = nil.
 Proof. induction ns; auto. Qed.
