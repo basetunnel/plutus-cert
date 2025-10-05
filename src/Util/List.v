@@ -751,7 +751,7 @@ Fixpoint mdrop {X:Type} (ns : list string) (nxs: list (string * X)) : list (stri
       mdrop ns' (drop n nxs)
   end.
 
-Function forall2b {A} (p : A -> A -> bool) (xs : list A) (ys : list A) : bool := 
+Function forall2b {A} (p : A -> A -> bool) (xs : list A) (ys : list A) : bool :=
   match xs, ys with
     | []       , []        => true
     | (x :: xs), (y :: ys) => (p x y && forall2b p xs ys)%bool

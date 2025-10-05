@@ -12,6 +12,7 @@ Import ListNotations.
 Definition ctx := list (string * string).
 
 Reserved Notation "Δ ⊢* s '~' t" (at level 40).
+Reserved Notation "Δ ⊢vds s '~' t" (at level 40).
 Reserved Notation "Δ ,, Γ ⊢ s '~' t" (at level 40).
 Reserved Notation "Δ ,, Γ ⊢b s '~' t" (at level 40).
 
@@ -126,6 +127,43 @@ End TY.
 Import PIRNotations. Open Scope pir_scope.
 Import TY.
 
+(* Renaming environments obtained point-wise *)
+
+
+Inductive tvdecls_env : list tvdecl -> list tvdecl -> ctx -> Prop :=
+| TVDE_nil :
+    tvdecls_env [] [] []
+| TVDE_cons X K X' tvds tvds' Δ :
+    tvdecls_env tvds tvds' Δ ->
+    tvdecls_env (TyVarDecl X K :: tvds) (TyVarDecl X' K :: tvds') ((X, X') :: Δ)
+.
+
+
+Inductive vdecls_env : list vdecl -> list vdecl -> ctx -> Prop :=
+| VDE_nil :
+    vdecls_env [] [] []
+| VDE x T x' T' vds vds' Γ :
+    vdecls_env vds vds' Γ ->
+    vdecls_env (VarDecl x T :: vds) (VarDecl x' T' :: vds') ((x, x') :: Γ)
+.
+
+Inductive alpha_vds
+  (Δ : list (string * string))
+  : list vdecl -> list vdecl -> Prop :=
+
+  | AV_cons X T X' T' vds vds' :
+      Δ ⊢* T ~ T' ->
+      Δ ⊢vds vds ~ vds' ->
+      Δ ⊢vds (VarDecl X T :: vds) ~ (VarDecl X' T' :: vds')
+
+  | AV_nil :
+      Δ ⊢vds [] ~ []
+
+  where "Δ ⊢vds s '~' t" := (alpha_vds Δ s t)
+.
+
+
+
 Inductive alpha
   (Δ : list (string * string))
   (Γ : list (string * string))
@@ -135,18 +173,44 @@ Inductive alpha
       alpha_lookup Γ x x' ->
       Δ ,, Γ ⊢ `x ~ `x'
 
-  | A_LamAbs x x' T t t' :
+  | A_LamAbs x x' T T' t t' :
+      Δ ⊢* T ~ T' ->
       Δ ,, ((x, x') :: Γ) ⊢ t ~ t' ->
-      Δ ,, Γ ⊢ λ x T t ~ λ x' T t'
+      Δ ,, Γ ⊢ λ x T t ~ λ x' T' t'
 
   | A_Apply t1 t2 t1' t2' :
       Δ ,, Γ ⊢ t1 ~ t1' ->
       Δ ,, Γ ⊢ t2 ~ t2' ->
       Δ ,, Γ ⊢ (t1 ⋅ t2) ~ (t1' ⋅ t2')
 
-  | A_Let r bs t bs' t' :
+  | A_LetNil r t t' :
       Δ ,, Γ ⊢ t ~ t' ->
-      Δ ,, Γ ⊢ Let r bs t ~ Let r bs' t'
+      Δ ,, Γ ⊢ Let r [] t ~ Let r [] t'
+
+  | A_LetTermBind s x T t x' T' t' bs bs' tb tb':
+      Δ ,, ((x, x') :: Γ)
+        ⊢ Let NonRec bs  tb
+        ~ Let NonRec bs' tb' ->
+      Δ ,, Γ
+        ⊢ Let NonRec (TermBind s (VarDecl x  T)  t  :: bs ) tb
+        ~ Let NonRec (TermBind s (VarDecl x' T') t' :: bs') tb'
+
+  | A_LetTypeBind X K T X' T' bs bs' tb tb':
+      ((X, X') :: Δ) ,, Γ
+        ⊢ Let NonRec bs  tb
+        ~ Let NonRec bs' tb' ->
+      Δ ,, Γ
+        ⊢ Let NonRec (TypeBind (TyVarDecl X  K) T :: bs ) tb
+        ~ Let NonRec (TypeBind (TyVarDecl X' K) T' :: bs') tb'
+
+  | A_LetDatatypeBind Δ' Γ' bs bs' tb tb' X X' K tvs tvs' m m' cs cs':
+      tvdecls_env tvs tvs' Δ' ->
+      vdecls_env cs cs' Γ' ->
+      ([(X, X')] ++ Δ' ++ Δ) ,, ([(m, m')] ++ Γ' ++ Γ)
+        ⊢ Let NonRec bs  tb ~ Let NonRec bs' tb' ->
+
+      Δ ,, Γ ⊢ Let NonRec (DatatypeBind (Datatype (TyVarDecl X K) tvs m cs) :: bs ) tb
+             ~ Let NonRec (DatatypeBind (Datatype (TyVarDecl X' K) tvs m' cs') :: bs') tb'
 
   | A_TyAbs X K t X' t':
       ((X, X') :: Δ) ,, Γ ⊢ t ~ t' ->
@@ -190,25 +254,7 @@ Inductive alpha
 
   where "Δ ',,' Γ ⊢ s '~' t" := (alpha Δ Γ s t)
 
-with alpha_binding
-  (Δ : list (string * string))
-  (Γ : list (string * string))
-  : binding -> binding -> Prop :=
 
-  | A_TermBind s x T t x' T' t' :
-    Δ ,, ((x, x') :: Γ) ⊢ t ~ t' ->
-    Δ ,, Γ ⊢b (TermBind s (VarDecl x T) t) ~ (TermBind s (VarDecl x' T') t')
-
-  | A_TypeBind X K T X' T' :
-    ((X, X') :: Δ) ⊢* T ~ T' ->
-    Δ ,, Γ ⊢b (TypeBind (TyVarDecl X K) T) ~ (TypeBind (TyVarDecl X' K) T')
-
-  (* TODO
-  | A_DatatypeBind X K T X' T' :
-    Δ ,, Γ ⊢b  ~
-  *)
-
-  where "Δ ',,' Γ ⊢b b '~' b'" := (alpha_binding Δ Γ b b')
 .
 
 
