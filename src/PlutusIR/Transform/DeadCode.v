@@ -11,6 +11,8 @@ implementation
   - uses Compat
   - uses pre-post conditions to ensure code was actually dead
 
+This is the definition presented in the SCP paper
+
 *)
 From Coq Require Import
   Strings.String
