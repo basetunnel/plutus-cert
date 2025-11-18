@@ -10,5 +10,5 @@ Definition context_compatible R :=
     R Δ Γ s t T ->
     forall (C : context) Δ1 Γ1 T1,
       Δ1 ,, Γ1  |- C : (Δ, Γ, T) ↪ T1 ->
-        R Δ1 Γ1(context_fill C s) (context_fill C t) T1
+        R Δ1 Γ1 (context_fill C s) (context_fill C t) T1
 .
