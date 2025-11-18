@@ -1,7 +1,7 @@
 Require Import Coq.Lists.List.
 Require Import Coq.Program.Basics.
 
-Require Import PlutusCert.PlutusIR.Transform.DeadCode2.
+Require Import PlutusCert.PlutusIR.Transform.DeadCode.Spec2.
 Require Import PlutusCert.PlutusIR.Transform.DeadCode.SSP.
 Require Import PlutusCert.PlutusIR.Semantics.Dynamic.
 Require Import PlutusCert.PlutusIR.Analysis.BoundVars.

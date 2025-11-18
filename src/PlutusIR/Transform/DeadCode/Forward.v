@@ -2,7 +2,7 @@ From PlutusCert Require Import PlutusIR.
 From PlutusCert Require Import Substitution.Free.
 
 From PlutusCert Require Import Bigstep.
-From PlutusCert Require Import DeadCode3.
+From PlutusCert Require Import DeadCode.Spec3.
 
 Require Import Utf8_core.
 

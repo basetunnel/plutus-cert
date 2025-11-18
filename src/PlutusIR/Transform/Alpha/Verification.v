@@ -127,7 +127,7 @@ Proof.
     rename t0 into t.
     rename v0 into r.
     rename v2 into r2.
-    inversion H_alpha as [ | | ? ? ? ? H_alpha_t1 H_alpha_t2 | | | | | | | | | | ]; subst.
+    inversion H_alpha as [ | | ? ? ? ? H_alpha_t1 H_alpha_t2 | | | | | | | | | | | | | ]; subst.
 
     (* Use IH1*)
     specialize (IHH_eval1 _ H_alpha_t1) as [r1' [H_t1'_eval H_t1'_alpha]].

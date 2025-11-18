@@ -5,7 +5,7 @@ From Coq Require Import
   Program.Equality
 .
 
-Require Import PlutusCert.PlutusIR.Transform.DeadCode3.
+Require Import PlutusCert.PlutusIR.Transform.DeadCode.Spec3.
 From PlutusCert Require Import Semantics.Dynamic.
 From PlutusCert Require Import Semantics.Static.
 From PlutusCert Require Import Analysis.WellScoped.

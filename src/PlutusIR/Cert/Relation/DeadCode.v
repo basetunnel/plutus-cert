@@ -1,6 +1,6 @@
 From PlutusCert Require Import
   Cert.Relation.Types
-  Transform.DeadCode
+  Transform.DeadCode.Spec
   DeadCode.DecideBool
 .
 

@@ -6,7 +6,7 @@ From PlutusCert Require Import
   Util
   PlutusIR
   PlutusIR.Analysis.Equality
-  DeadCode2
+  DeadCode.Spec2
   Compat
   Purity
   Size

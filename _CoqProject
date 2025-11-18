@@ -48,11 +48,11 @@ src/PlutusIR/Transform/LetNonRec/DSP.v
 src/PlutusIR/Transform/LetNonRec/SSP.v
 src/PlutusIR/Transform/LetNonRec/Misc.v
 src/PlutusIR/Transform/LetTypes.v
-src/PlutusIR/Transform/DeadCode2.v
-src/PlutusIR/Transform/DeadCode3.v
+src/PlutusIR/Transform/DeadCode/Spec2.v
+src/PlutusIR/Transform/DeadCode/Spec3.v
 src/PlutusIR/Transform/DeadCode/SSP.v
 src/PlutusIR/Transform/DeadCode/DSP.v
-src/PlutusIR/Transform/DeadCode.v
+src/PlutusIR/Transform/DeadCode/Spec.v
 src/PlutusIR/Transform/DeadCode/Intermediate.v
 src/PlutusIR/Transform/DeadCode/DecideBool.v
 src/PlutusIR/Transform/DeadCode/Decide2.v
