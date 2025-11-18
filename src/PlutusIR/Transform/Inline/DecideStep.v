@@ -12,7 +12,7 @@ Set Implicit Arguments.
 Set Equations Transparent.
 
 From PlutusCert Require Import Util.
-From PlutusCert Require Import PlutusIR.Transform.Inline.
+From PlutusCert Require Import PlutusIR.Transform.Inline.Spec.
 From PlutusCert Require Import PlutusIR.
 From PlutusCert Require Import PlutusIR.Analysis.FreeVars.
 From PlutusCert Require Import PlutusIR.Transform.Compat.

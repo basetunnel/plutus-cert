@@ -11,7 +11,7 @@ From PlutusCert Require Import
   PlutusIR
   PlutusIR.Analysis.Equality
   PlutusIR.Transform.Compat
-  PlutusIR.Transform.Inline
+  PlutusIR.Transform.Inline.Spec
 .
 
 Import ListNotations.

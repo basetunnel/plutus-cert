@@ -29,7 +29,7 @@ src/PlutusIR/Analysis/WellScoped/Lemmas.v
 
 src/PlutusIR/Transform/Equal.v
 src/PlutusIR/Transform/ThunkRecursions.v
-src/PlutusIR/Transform/Inline.v
+src/PlutusIR/Transform/Inline/Spec.v
 src/PlutusIR/Transform/Rename.v
 src/PlutusIR/Transform/Alpha/Spec.v
 src/PlutusIR/Transform/Alpha/Verification.v
