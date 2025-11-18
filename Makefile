@@ -21,8 +21,6 @@ clean: Makefile.coq
 	find src -type f -name "*.glob" -delete
 	rm -f Makefile.coq
 
-	$(MAKE) -C lib/QuickChick clean
-
 
 Makefile.coq: _CoqProject Makefile
 	coq_makefile COQFLAGS = "-w \"-all\"" -f _CoqProject \
