@@ -28,19 +28,19 @@ src/PlutusIR/Analysis/WellScoped.v
 src/PlutusIR/Analysis/WellScoped/Lemmas.v
 
 src/PlutusIR/Transform/Equal.v
-src/PlutusIR/Transform/ThunkRecursions.v
-src/PlutusIR/Transform/Inline/Spec.v
-src/PlutusIR/Transform/Rename.v
+src/PlutusIR/Transform/ThunkRecursions/Spec.v
+src/PlutusIR/Transform/Alpha/Rename.v
 src/PlutusIR/Transform/Alpha/Spec.v
 src/PlutusIR/Transform/Alpha/Verification.v
+src/PlutusIR/Transform/Inline/Spec.v
 src/PlutusIR/Transform/Inline/DecideStepBool.v
 src/PlutusIR/Transform/Inline/Intermediate.v
 src/PlutusIR/Transform/Compat.v
 src/PlutusIR/Transform/Compose.v
 src/PlutusIR/Transform/Functional.v
-src/PlutusIR/Transform/FloatLet.v
+src/PlutusIR/Transform/FloatLet/Spec.v
 src/PlutusIR/Transform/LetMergeNR.v
-src/PlutusIR/Transform/LetNonStrict.v
+src/PlutusIR/Transform/LetNonStrict/Spec.v
 src/PlutusIR/Transform/LetRec.v
 src/PlutusIR/Transform/LetNonRec/Spec.v
 src/PlutusIR/Transform/LetNonRec/DecideBool.v
@@ -48,11 +48,11 @@ src/PlutusIR/Transform/LetNonRec/DSP.v
 src/PlutusIR/Transform/LetNonRec/SSP.v
 src/PlutusIR/Transform/LetNonRec/Misc.v
 src/PlutusIR/Transform/LetTypes.v
+src/PlutusIR/Transform/DeadCode/Spec.v
 src/PlutusIR/Transform/DeadCode/Spec2.v
 src/PlutusIR/Transform/DeadCode/Spec3.v
 src/PlutusIR/Transform/DeadCode/SSP.v
 src/PlutusIR/Transform/DeadCode/DSP.v
-src/PlutusIR/Transform/DeadCode/Spec.v
 src/PlutusIR/Transform/DeadCode/Intermediate.v
 src/PlutusIR/Transform/DeadCode/DecideBool.v
 src/PlutusIR/Transform/DeadCode/Decide2.v
@@ -62,8 +62,8 @@ src/PlutusIR/Transform/DeadCode/DSP/BoundVars.v
 src/PlutusIR/Transform/Beta/Spec.v
 src/PlutusIR/Transform/Beta/Dec.v
 src/PlutusIR/Transform/Beta/Examples.v
-src/PlutusIR/Transform/Unwrap.v
-src/PlutusIR/Transform/SplitRec.v
+src/PlutusIR/Transform/Unwrap/Spec.v
+src/PlutusIR/Transform/SplitRec/Spec.v
 src/PlutusIR/Transform.v
 
 src/PlutusIR/Semantics/Dynamic.v

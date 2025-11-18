@@ -9,7 +9,7 @@ From PlutusCert Require Import
   Analysis.NoShadow
   Analysis.Purity
   Analysis.WellScoped
-  Transform.SplitRec
+  Transform.SplitRec.Spec
 .
 
 

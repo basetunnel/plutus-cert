@@ -4,8 +4,7 @@ From PlutusCert Require Import
   PlutusIR.Analysis.FreeVars
   PlutusIR.Analysis.Equality
   Folds
-  Transform.Rename
-
+  Transform.Alpha.Rename
 .
 Require Import Coq.Strings.String.
 Require Import Coq.Numbers.DecimalString.

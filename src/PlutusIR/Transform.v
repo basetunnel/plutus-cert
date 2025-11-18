@@ -1,13 +1,14 @@
 From PlutusCert Require Export
   PlutusIR.Transform.Compose
-  PlutusIR.Transform.Rename
+  PlutusIR.Transform.Alpha.Rename
   PlutusIR.Transform.DeadCode.Spec
   PlutusIR.Transform.Inline.Spec
   PlutusIR.Transform.Equal
-  PlutusIR.Transform.ThunkRecursions
-  PlutusIR.Transform.FloatLet
+  PlutusIR.Transform.ThunkRecursions.Spec
+  PlutusIR.Transform.FloatLet.Spec
+  PlutusIR.Transform.Unwrap.Spec
   PlutusIR.Transform.LetNonRec.Spec
-  PlutusIR.Transform.LetNonStrict
+  PlutusIR.Transform.LetNonStrict.Spec
   PlutusIR.Transform.LetRec
   PlutusIR.Transform.LetTypes
   PlutusIR.Transform.Compat
