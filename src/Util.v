@@ -152,6 +152,20 @@ Definition sumbool_to_optionr {a b} (x : sumbool a b) : option b :=
   end.
 
 
+Definition prod_dec
+  (A B : Type)
+  (eqA : forall a1 a2 : A, {a1 = a2} + {a1 <> a2})
+  (eqB : forall b1 b2 : B, {b1 = b2} + {b1 <> b2})
+  : forall x1 x2 : A * B, {x1 = x2} + {x1 <> x2}.
+Proof.
+  intros [a1 b1] [a2 b2].
+  destruct (eqA a1 a2) as [Ha | Ha]; [subst|].
+  - destruct (eqB b1 b2) as [Hb | Hb]; [subst|].
+    + left. reflexivity.
+    + right. intro H; inversion H; auto.
+  - right. intro H; inversion H; auto.
+Defined.
+
 Definition string_dec_option := fun x y => sumbool_to_optionl (string_dec x y).
 
 (* lookup with evidence *)

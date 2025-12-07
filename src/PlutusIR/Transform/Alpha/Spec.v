@@ -82,14 +82,73 @@ Module TY.
     where "Δ ⊢* s '~' t" := (ty_alpha Δ s t)
   .
 
+  Open Scope string_scope.
 
+  Definition rename (Δ : ctx) : ty -> ty := fix rename T :=
+    match T with
+    | Ty_Var X        =>
+        match lookup X Δ with
+        | Some X' => Ty_Var X'
+        | None    => Ty_Var X
+        end
+    | Ty_Fun U T      => Ty_Fun (rename U) (rename T)
+    | Ty_App U T      => Ty_App (rename U) (rename T)
+    | Ty_IFix U T     => Ty_IFix (rename U) (rename T)
+    | Ty_Forall X K T => Ty_Forall X K (rename T)
+    | Ty_Builtin B    => Ty_Builtin B
+    | Ty_Lam X K T    => Ty_Lam X K (rename T)
+    | Ty_SOP TTU      => Ty_SOP (map (map rename) TTU)
+    end
+    .
 
+  Lemma alpha_rename Δ T T' :
+    Δ ⊢* T ~ T' -> rename Δ T = T'.
+  Admitted.
+
+  (* Symmetric contexts *)
   Definition ctx_refl (xs : ctx) := Forall (fun '(x, y) => x = y) xs.
 
-  Lemma alpha_refl xs t :
-    ctx_refl xs ->
-    xs ⊢* t ~ t.
+  From PlutusCert Require Import FreeVars Util.
+  Import FreeVars.Ty.
+
+  Definition ftv_ctx : ty -> ctx :=
+    fun T => let xs := ftv T in zip xs xs.
+
+  Lemma ftv_ctx_equation
+     : forall T : ty,
+       ftv_ctx T =
+       match T with
+       | Ty_Var X => [(X,X)]
+       | Ty_IFix F T0 => ftv_ctx F ++ ftv_ctx T0
+       | Ty_Builtin _ => []
+       | Ty_Forall X _ T' | Ty_Lam X _ T' => remove (prod_dec string_dec string_dec) (X, X) (ftv_ctx T')
+       | Ty_Fun T1 T2 | Ty_App T1 T2 => ftv_ctx T1 ++ ftv_ctx T2
+       | Ty_SOP Tss => flatmap2 ftv_ctx Tss
+       end
+    .
+  Admitted.
+
+  Lemma ftv_ctx__Ty_Fun S T :
+    ftv_ctx (Ty_Fun S T) = ftv_ctx S ++ ftv_ctx T.
+  Admitted.
+
+  Lemma ftv_cx__refl T : ctx_refl (ftv_ctx T).
   Proof.
+    cbv [ ctx_refl ].
+    induction T; simpl.
+    - cbv. auto.
+    -
+  Admitted.
+
+
+
+
+  Lemma alpha_refl T :
+    ftv_ctx T ⊢* T ~ T.
+  Proof.
+    induction T.
+    - admit.
+    - unfold ftv_ctx, zip in *. simpl in *.
   Admitted.
 
 
