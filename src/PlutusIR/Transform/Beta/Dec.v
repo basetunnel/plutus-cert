@@ -247,4 +247,4 @@ Proof.
   intros C_sound H_dec.
   repeat destruct H_dec as [ H_dec | H_dec ];
   eauto 2 with beta_sound. (* Search becomes inefficient, probably because it doesn't know in what order to try the dec_sound lemmas  *)
-Defined.
+Qed.

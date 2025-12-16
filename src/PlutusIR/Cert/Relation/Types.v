@@ -6,6 +6,16 @@ From PlutusCert Require Import
 
 Import Utf8_core.
 
+
+Record rel_sound : Type :=
+  mk_rel_sound {
+    rs_rel : term -> term -> Prop;
+    rs_decb : term -> term -> bool;
+    rs_equiv : ∀ s t,
+      rs_decb s t = true -> rs_rel s t;
+  }
+.
+
 Record rel_decidable : Type :=
   mk_rel_decidable {
     rd_rel : term -> term -> Prop;
@@ -13,6 +23,12 @@ Record rel_decidable : Type :=
     rd_equiv : ∀ s t,
       rd_decb s t = true <-> rd_rel s t;
   }
+.
+(* Every decidable relation is a sound relation *)
+Definition rel_decidable__sound : rel_decidable -> rel_sound := fun rd =>
+  match rd with
+  | mk_rel_decidable R dec equiv => mk_rel_sound R dec (fun s t => proj1 (equiv s t))
+  end
 .
 
 Definition rd_dec (rd : rel_decidable) (t t' : term) : option (rd_rel rd t t') :=
