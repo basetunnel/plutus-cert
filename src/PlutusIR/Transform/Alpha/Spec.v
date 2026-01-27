@@ -1,6 +1,7 @@
 From Coq Require Import
   Strings.String
   Lists.List
+  Program.Equality
 .
 From PlutusCert Require Import
   Util
@@ -12,23 +13,17 @@ Import ListNotations.
 Definition ctx := list (string * string).
 
 Reserved Notation "Δ ⊢* s '~' t" (at level 40).
+Reserved Notation "s '~a' t" (at level 40).
 Reserved Notation "Δ ⊢vds s '~' t" (at level 40).
 Reserved Notation "Δ ,, Γ ⊢ s '~' t" (at level 40).
 Reserved Notation "Δ ,, Γ ⊢b s '~' t" (at level 40).
 
+(* In a renaming context Δ, `alpha_lookup Δ x y` asserts that:
+ *   - x is renamed to y
+ *   - no other variable, bound after `x` is renamed to y
+ * Both are enforced by the AL_diff constructor.
+**)
 Inductive alpha_lookup : ctx -> string -> string -> Prop :=
-
-
-  (* This rule seems unnecessary as long as (x,x) is recorded in the
-   * environment. I guess it makes it possible to define alpha equivalent terms
-   * as those related under the empty environment. The alternative is to define
-   * it for open terms by constructing an identity environment for all free
-   * variables.
-   *)
-  (*
-  | AL_refl x :
-      alpha_lookup [] x x
-  *)
 
   | AL_cons x y xs :
       alpha_lookup ((x, y) :: xs) x y
@@ -40,69 +35,146 @@ Inductive alpha_lookup : ctx -> string -> string -> Prop :=
       alpha_lookup ((x, y) :: xs) z w
 .
 
+Lemma alpha__lookup Δ x y : alpha_lookup Δ x y -> lookup x Δ = Some y.
+Admitted.
+
+Lemma alpha__lookup_inv Δ x y : alpha_lookup Δ x y -> lookup_inv y Δ = Some x.
+Admitted.
 
 Module TY.
 
-  Inductive ty_alpha : list (string * string) -> ty -> ty -> Prop :=
+  (* ty_rename Δ T T' relates types T and T', where free variables are
+   * renamed according to Δ.
+  *)
+  Inductive ty_rename : list (string * string) -> ty -> ty -> Prop :=
 
-    | A_TyVar X X' Δ :
+    | R_TyVar X X' Δ :
         alpha_lookup Δ X X' ->
         Δ ⊢* Ty_Var X ~ Ty_Var X'
 
-    | A_TyLam X X' K T T' Δ :
+    | R_TyLam X X' K T T' Δ :
         ((X, X') :: Δ) ⊢* T ~ T' ->
         Δ ⊢* Ty_Lam X K T ~ Ty_Lam X' K T'
 
-    | A_TyApp T1 T2 T1' T2' Δ :
+    | R_TyApp T1 T2 T1' T2' Δ :
         Δ ⊢* T1 ~ T1' ->
         Δ ⊢* T2 ~ T2' ->
         Δ ⊢* Ty_App T1 T2 ~ Ty_App T1' T2'
 
-    | A_TyFun T1 T2 T1' T2' Δ :
+    | R_TyFun T1 T2 T1' T2' Δ :
         Δ ⊢* T1 ~ T1' ->
         Δ ⊢* T2 ~ T2' ->
         Δ ⊢* Ty_Fun T1 T2 ~ Ty_Fun T1' T2'
 
-    | A_TyIFix T1 T2 T1' T2' Δ :
+    | R_TyIFix T1 T2 T1' T2' Δ :
         Δ ⊢* T1 ~ T1' ->
         Δ ⊢* T2 ~ T2' ->
         Δ ⊢* Ty_IFix T1 T2 ~ Ty_IFix T1' T2'
 
-    | A_TyForall X X' K T T' Δ :
+    | R_TyForall X X' K T T' Δ :
         ((X, X') :: Δ) ⊢* T ~ T' ->
         Δ ⊢* Ty_Forall X K T ~ Ty_Forall X' K T'
 
-    | A_TyBuiltin Δ U :
+    | R_TyBuiltin Δ U :
         Δ ⊢* Ty_Builtin U ~ Ty_Builtin U
 
-    | A_TySOP Δ Tss Tss':
+    | R_TySOP Δ Tss Tss':
         ForallSetPair2 (fun T T' => Δ ⊢* T ~ T') Tss Tss' ->
         Δ ⊢* Ty_SOP Tss ~ Ty_SOP Tss'
 
-    where "Δ ⊢* s '~' t" := (ty_alpha Δ s t)
+    where "Δ ⊢* s '~' t" := (ty_rename Δ s t)
   .
 
-  Open Scope string_scope.
-
-  Definition rename (Δ : ctx) : ty -> ty := fix rename T :=
+  (* Rename free variables according to a context Δ *)
+  Definition rename_free : ctx -> ty -> ty := fix ren (Δ : ctx) T :=
     match T with
     | Ty_Var X        =>
         match lookup X Δ with
         | Some X' => Ty_Var X'
         | None    => Ty_Var X
         end
-    | Ty_Fun U T      => Ty_Fun (rename U) (rename T)
-    | Ty_App U T      => Ty_App (rename U) (rename T)
-    | Ty_IFix U T     => Ty_IFix (rename U) (rename T)
-    | Ty_Forall X K T => Ty_Forall X K (rename T)
+
+    (* binders*)
+    | Ty_Lam X K T    => Ty_Lam X K (ren (drop X Δ) T)
+    | Ty_Forall X K T => Ty_Forall X K (ren (drop X Δ) T)
+
+    | Ty_Fun U T      => Ty_Fun (ren Δ U) (ren Δ T)
+    | Ty_App U T      => Ty_App (ren Δ U) (ren Δ T)
+    | Ty_IFix U T     => Ty_IFix (ren Δ U) (ren Δ T)
     | Ty_Builtin B    => Ty_Builtin B
-    | Ty_Lam X K T    => Ty_Lam X K (rename T)
-    | Ty_SOP TTU      => Ty_SOP (map (map rename) TTU)
+    | Ty_SOP TTU      => Ty_SOP (map (map (ren Δ)) TTU)
     end
     .
 
-  Lemma alpha_rename Δ T T' :
-    Δ ⊢* T ~ T' -> rename Δ T = T'.
+  (*
+  Alpha-equivalence, e.g.
+
+    λx . x ~ λy. y
+
+  *)
+  Inductive ty_alpha : ty -> ty -> Prop :=
+
+    | A_TyVar X :
+        Ty_Var X ~a Ty_Var X
+
+    | A_LamAbs K X T X' T' :
+        (rename_free [(X, X')] T) ~a T' ->
+        Ty_Lam X K T ~a Ty_Lam X' K T'
+
+    | A_Apply S T S' T' :
+        S ~a S' ->
+        T ~a T' ->
+        Ty_App S T ~a Ty_App S' T'
+
+    where "s '~a' t" := (ty_alpha s t)
+  .
+
+  Lemma rename__alpha Δ S T :
+    Δ ⊢* S ~ T ->
+    rename_free Δ S ~a T.
+  Proof.
+    intros H.
+    dependent induction H.
+    dependent induction 2.
+    2: {
+
+    dependent induction H.
+    2: {
+
+  Admitted.
+
+  Lemma alpha__rename Δ S T :
+    rename_free Δ S ~a T ->
+    Δ ⊢* S ~ T.
+  Admitted.
+  (* Not sure if this holds? this direction may not be necessary for the
+   * decision procedure (which is only neede for the alpha_rename relation)  *)
+
+
+  Lemma alpha_refl S :
+    S ~a S.
+  Admitted.
+
+  Lemma alpha_sym S T :
+    S ~a T ->
+    T ~a S.
+  Admitted.
+
+  Lemma alpha_trans S T U :
+    S ~a T ->
+    T ~a U ->
+    S ~a U.
+  Admitted.
+
+
+
+
+
+  Open Scope string_scope.
+
+
+  Lemma alpha__rename Δ T T' :
+    Δ ⊢* T ~ T' -> [] ⊢* (rename_free Δ T) ~ T'.
   Admitted.
 
   (* Symmetric contexts *)

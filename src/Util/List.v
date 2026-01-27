@@ -40,6 +40,12 @@ Fixpoint lookup {X:Type} (k : string) (l : list (string * X)) : option X :=
   | (j,x) :: l' => if j =? k then Datatypes.Some x else lookup k l'
   end.
 
+Fixpoint lookup_inv {X:Type} (k : string) (l : list (X * string)) : option X :=
+  match l with
+  | nil => None
+  | (x, j) :: l' => if j =? k then Datatypes.Some x else lookup_inv k l'
+  end.
+
 Definition remove_many {A} (A_dec : forall x y : A, {x = y} + {x <> y}) : list A -> list A -> list A :=
   fun xs ys => fold_right (remove A_dec) ys xs.
 
