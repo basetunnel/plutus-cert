@@ -135,12 +135,6 @@ Module TY.
   Proof.
     intros H.
     dependent induction H.
-    dependent induction 2.
-    2: {
-
-    dependent induction H.
-    2: {
-
   Admitted.
 
   Lemma alpha__rename Δ S T :

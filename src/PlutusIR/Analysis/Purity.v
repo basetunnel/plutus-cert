@@ -6,7 +6,10 @@ From Coq Require Import
 From PlutusCert Require Import
   PlutusIR
   Semantics.Dynamic.Values
+  Semantics.Static.Auxiliary
   Util.List
+  Util
+  Analysis.BoundVars
   .
 
 Import ListNotations.
@@ -17,6 +20,71 @@ Inductive binder_info :=
   | let_bound : strictness -> binder_info
   | lambda_bound
 .
+
+
+
+Inductive purity := pure | unknown | impure.
+
+Definition env := list (string * purity).
+
+Inductive has_purity : env -> term -> purity -> Type :=
+  | P_Let      : forall {Γ Γs bs t p},
+      bindings_has_purity Γ bs Γs ->
+      has_purity (Γs ++ Γ) (Let NonRec bs t) p
+
+  (* Conservative about let bindings (purity unknown), unclear how to deal with
+   * e.g. letrec x = x in x
+   * which is not pure
+   *)
+  | P_LetRec : forall {Γ bs t},
+      has_purity Γ (Let NonRec bs t) unknown
+
+    (*
+  | P_Var      : name -> term
+  | P_TyAbs    : binderTyname -> kind -> term -> term
+  | P_LamAbs   : binderName -> ty -> term -> term
+  | P_Apply    : term -> term -> term
+  | P_Constant : constant -> term
+  | P_Builtin  : DefaultFun -> term
+  | P_TyInst   : term -> ty -> term
+  | P_Error    : ty -> term
+  | P_IWrap    : ty -> ty -> term -> term
+  | P_Unwrap   : term -> term
+  | P_Constr   : ty -> nat -> list term -> term
+  | P_Case     : ty -> term -> list term -> term
+  *)
+with
+
+  (* The purity of all bound (term) variables in a binding *)
+  binding_has_purity : env -> binding -> env -> Type :=
+
+  | P_TermBind_Strict : forall {Γ x T t p},
+      has_purity Γ t p ->
+      binding_has_purity Γ (TermBind Strict (VarDecl x T) t) [(x, p)]
+
+  (* Non-strict bindings are always pure *)
+  | P_TermBind_NonStrict : forall {Γ x T t p},
+      binding_has_purity Γ (TermBind NonStrict (VarDecl x T) t) [(x, p)]
+
+  | P_TypeBind : forall {Γ tvd T},
+      binding_has_purity Γ (TypeBind tvd T) []
+
+  (* Constructors and destructors are always pure *)
+  | P_DatatypeBind : forall {Γ d},
+      binding_has_purity Γ (DatatypeBind d)
+        (map (fun x => (x, pure)) (bvb (DatatypeBind d)))
+with
+  bindings_has_purity : env -> list binding -> env -> Prop :=
+  | bte_nil : bindings_has_purity [] [] []
+
+  | bte_cons : forall {b bs Γ Γs},
+      binding_has_purity Γ b Γ ->
+      bindings_has_purity Γ bs Γs ->
+      bindings_has_purity Γ (b :: bs) (Γs ++ Γ) (* ++ Γ results in a reversed env, to match binding order of a Let *)
+.
+
+(* The following is the old version, which does not state the property over the
+ * whole term *)
 
 Definition ctx := list (string * binder_info).
 
