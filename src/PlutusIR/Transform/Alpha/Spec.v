@@ -106,68 +106,10 @@ Module TY.
     end
     .
 
-  (*
-  Alpha-equivalence, e.g.
-
-    λx . x ~ λy. y
-
-  *)
-  Inductive ty_alpha : ty -> ty -> Prop :=
-
-    | A_TyVar X :
-        Ty_Var X ~a Ty_Var X
-
-    | A_LamAbs K X T X' T' :
-        (rename_free [(X, X')] T) ~a T' ->
-        Ty_Lam X K T ~a Ty_Lam X' K T'
-
-    | A_Apply S T S' T' :
-        S ~a S' ->
-        T ~a T' ->
-        Ty_App S T ~a Ty_App S' T'
-
-    where "s '~a' t" := (ty_alpha s t)
-  .
-
-  Lemma rename__alpha Δ S T :
-    Δ ⊢* S ~ T ->
-    rename_free Δ S ~a T.
-  Proof.
-    intros H.
-    dependent induction H.
-  Admitted.
-
-  Lemma alpha__rename Δ S T :
-    rename_free Δ S ~a T ->
-    Δ ⊢* S ~ T.
-  Admitted.
-  (* Not sure if this holds? this direction may not be necessary for the
-   * decision procedure (which is only neede for the alpha_rename relation)  *)
-
-
-  Lemma alpha_refl S :
-    S ~a S.
-  Admitted.
-
-  Lemma alpha_sym S T :
-    S ~a T ->
-    T ~a S.
-  Admitted.
-
-  Lemma alpha_trans S T U :
-    S ~a T ->
-    T ~a U ->
-    S ~a U.
-  Admitted.
-
-
-
-
-
   Open Scope string_scope.
 
 
-  Lemma alpha__rename Δ T T' :
+  Lemma rename__empty Δ T T' :
     Δ ⊢* T ~ T' -> [] ⊢* (rename_free Δ T) ~ T'.
   Admitted.
 
@@ -248,6 +190,70 @@ Module TY.
 
 
 End TY.
+
+
+Module TY_BINARY.
+
+  (* Experiment on expressing alpha equivalence as a binary relation (no
+   * environments) *)
+
+  Import TY.
+
+  (*
+  Alpha-equivalence, e.g.
+
+    λx . x ~ λy. y
+
+  *)
+  Inductive ty_alpha : ty -> ty -> Prop :=
+
+    | A_TyVar X :
+        Ty_Var X ~a Ty_Var X
+
+    | A_LamAbs K X T X' T' :
+        (rename_free [(X, X')] T) ~a T' ->
+        Ty_Lam X K T ~a Ty_Lam X' K T'
+
+    | A_Apply S T S' T' :
+        S ~a S' ->
+        T ~a T' ->
+        Ty_App S T ~a Ty_App S' T'
+
+    where "s '~a' t" := (ty_alpha s t)
+  .
+
+  Lemma rename__alpha Δ S T :
+    Δ ⊢* S ~ T ->
+    rename_free Δ S ~a T.
+  Proof.
+    intros H.
+    dependent induction H.
+  Admitted.
+
+  Lemma alpha__rename Δ S T :
+    rename_free Δ S ~a T ->
+    Δ ⊢* S ~ T.
+  Admitted.
+  (* Not sure if this holds? this direction may not be necessary for the
+   * decision procedure (which is only neede for the alpha_rename relation)  *)
+
+
+  Lemma alpha__refl S :
+    S ~a S.
+  Admitted.
+
+  Lemma alpha__sym S T :
+    S ~a T ->
+    T ~a S.
+  Admitted.
+
+  Lemma alpha__trans S T U :
+    S ~a T ->
+    T ~a U ->
+    S ~a U.
+  Admitted.
+
+End TY_BINARY.
 
 Import PIRNotations. Open Scope pir_scope.
 Import TY.
