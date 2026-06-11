@@ -1,6 +1,7 @@
 Require Import PlutusCert.PlutusIR.Semantics.Dynamic.Bigstep.
 Require Import PlutusCert.PlutusIR.Semantics.Static.Typing.Typing.
 Require Import PlutusCert.PlutusIR.Semantics.TypeSafety.SubstitutionPreservesTyping.
+Require Import PlutusCert.PlutusIR.Semantics.TypeSafety.BaseKindedness.
 Require Import PlutusCert.PlutusIR.Semantics.TypeSafety.TypeLanguage.Preservation.
 Require Import PlutusCert.PlutusIR.Semantics.Static.Theorems.UniqueTypes.
 Require Import PlutusCert.PlutusIR.Semantics.Static.Theorems.ContextInvariance.AFI.
@@ -98,11 +99,6 @@ Import TY.
 
 Axiom ctx_refl_nil : ctx_refl [].
 
-Create HintDb alpha.
-Hint Resolve
-  alpha_refl
-  ctx_refl_nil
-: alpha.
 
 (* shorter syntax for ∃T', ... T' /\ T ~ T' *)
 
@@ -128,7 +124,10 @@ Proof with eauto with alpha.
   intros H_eval.
   revert T.
   induction H_eval; intros S H_typing.
-  all: try now (right; exists S; split; eauto with alpha).
+
+  (* solve all cases that are values *)
+  all: try now (right; exists S; split; eauto using ctx_refl_nil, closed_refl).
+
   all: try now (left; constructor). (* Error cases *)
   - (* Apply *)
     inversion H_typing; subst.

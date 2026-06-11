@@ -6,7 +6,10 @@ From Coq Require Import
 From PlutusCert Require Import
   Util
   Util.List
-  PlutusIR.
+  PlutusIR
+  Typing.Typing
+  BaseKindedness
+  .
 
 Import ListNotations.
 
@@ -106,65 +109,6 @@ Module TY.
     end
     .
 
-  (*
-  Alpha-equivalence, e.g.
-
-    λx . x ~ λy. y
-
-  *)
-  Inductive ty_alpha : ty -> ty -> Prop :=
-
-    | A_TyVar X :
-        Ty_Var X ~a Ty_Var X
-
-    | A_LamAbs K X T X' T' :
-        (rename_free [(X, X')] T) ~a T' ->
-        Ty_Lam X K T ~a Ty_Lam X' K T'
-
-    | A_Apply S T S' T' :
-        S ~a S' ->
-        T ~a T' ->
-        Ty_App S T ~a Ty_App S' T'
-
-    where "s '~a' t" := (ty_alpha s t)
-  .
-
-  Lemma rename__alpha Δ S T :
-    Δ ⊢* S ~ T ->
-    rename_free Δ S ~a T.
-  Proof.
-    intros H.
-    dependent induction H.
-    dependent induction 2.
-    2: {
-
-    dependent induction H.
-    2: {
-
-  Admitted.
-
-  Lemma alpha__rename Δ S T :
-    rename_free Δ S ~a T ->
-    Δ ⊢* S ~ T.
-  Admitted.
-  (* Not sure if this holds? this direction may not be necessary for the
-   * decision procedure (which is only neede for the alpha_rename relation)  *)
-
-
-  Lemma alpha_refl S :
-    S ~a S.
-  Admitted.
-
-  Lemma alpha_sym S T :
-    S ~a T ->
-    T ~a S.
-  Admitted.
-
-  Lemma alpha_trans S T U :
-    S ~a T ->
-    T ~a U ->
-    S ~a U.
-  Admitted.
 
 
 
@@ -200,6 +144,32 @@ Module TY.
     .
   Admitted.
 
+  Lemma ftv_ctx__closed {τ K}
+    :  has_kind [] τ K
+    -> ftv_ctx τ = []
+  .
+  Admitted.
+
+  Lemma alpha_refl T :
+    ftv_ctx T ⊢* T ~ T.
+  Proof.
+    induction T.
+    - admit.
+    - unfold ftv_ctx, zip in *. simpl in *.
+  Admitted.
+
+
+  Lemma closed_refl {t τ}:
+    has_type [] [] t τ ->
+    [] ⊢* τ ~ τ
+  .
+  Proof.
+    intros H_ty.
+    apply has_type__basekinded in H_ty.
+    rewrite <- (ftv_ctx__closed H_ty).
+    apply alpha_refl.
+  Qed.
+
   Lemma ftv_ctx__Ty_Fun S T :
     ftv_ctx (Ty_Fun S T) = ftv_ctx S ++ ftv_ctx T.
   Admitted.
@@ -214,14 +184,6 @@ Module TY.
 
 
 
-
-  Lemma alpha_refl T :
-    ftv_ctx T ⊢* T ~ T.
-  Proof.
-    induction T.
-    - admit.
-    - unfold ftv_ctx, zip in *. simpl in *.
-  Admitted.
 
 
   Inductive pair_sym : string * string -> string * string -> Prop :=
@@ -255,8 +217,68 @@ Module TY.
 
 End TY.
 
+Module TyEquivalence.
+
+  Import TY.
+  (*
+
+  An approach to α-equivalence without environment (experiment)
+
+    λx . x ~ λy. y
+
+  *)
+  Inductive ty_alpha : ty -> ty -> Prop :=
+
+    | A_TyVar X :
+        Ty_Var X ~a Ty_Var X
+
+    | A_LamAbs K X T X' T' :
+        (rename_free [(X, X')] T) ~a T' ->
+        Ty_Lam X K T ~a Ty_Lam X' K T'
+
+    | A_Apply S T S' T' :
+        S ~a S' ->
+        T ~a T' ->
+        Ty_App S T ~a Ty_App S' T'
+
+    where "s '~a' t" := (ty_alpha s t)
+  .
+
+  Lemma rename__alpha Δ S T :
+    Δ ⊢* S ~ T ->
+    rename_free Δ S ~a T.
+  Proof.
+    intros H.
+    dependent induction H.
+  Admitted.
+
+  Lemma alpha__rename Δ S T :
+    rename_free Δ S ~a T ->
+    Δ ⊢* S ~ T.
+  Admitted.
+  (* Not sure if this holds? this direction may not be necessary for the
+   * decision procedure (which is only neede for the alpha_rename relation)  *)
+
+
+  Lemma alpha_refl S :
+    S ~a S.
+  Admitted.
+
+  Lemma alpha_sym S T :
+    S ~a T ->
+    T ~a S.
+  Admitted.
+
+  Lemma alpha_trans S T U :
+    S ~a T ->
+    T ~a U ->
+    S ~a U.
+  Admitted.
+
+End TyEquivalence.
+
 Import PIRNotations. Open Scope pir_scope.
-Import TY.
+Export TY.
 
 (* Renaming environments obtained point-wise *)
 
