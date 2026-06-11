@@ -14,6 +14,7 @@
           coqPackages.QuickChick
           coqPackages.equations
           coqPackages.coq-lsp
+          python3 # for coqtail plugin in vim
           ];
       };
   };
