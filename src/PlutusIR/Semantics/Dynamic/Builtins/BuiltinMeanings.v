@@ -113,108 +113,112 @@ End ByteString.
 
 
 (*
-Computes results of fully applied default functions where possible.
+Computes results of fully applied builtin functions where possible. Returns an error if either
+- unexpected arguments supplied
+- function not formalized
+- the semantics of the function fails
+
 *)
-Definition compute_defaultfun (t : term) : option term :=
+Definition eval_builtin (t : term) : term :=
   match t with
   (* Integer operations *)
-  | <{ CInt n + CInt m }>  => Some <{ CInt {n + m} }>
-  | <{ CInt n * CInt m }>  => Some <{ CInt {n * m} }>
-  | <{ CInt n - CInt m }>  => Some <{ CInt {n - m} }>
-  | <{ {Builtin DivideInteger} ⋅ CInt n ⋅ CInt m }> => Some <{ CInt {n / m} }>
-  | <{ {Builtin QuotientInteger} ⋅ CInt n ⋅ CInt m }> => Some <{ CInt {n ÷ m} }>
-  | <{ {Builtin RemainderInteger} }> => None
-  | <{ {Builtin ModInteger} }> => None
+  | <{ CInt n + CInt m }>  => <{ CInt {n + m} }>
+  | <{ CInt n * CInt m }>  => <{ CInt {n * m} }>
+  | <{ CInt n - CInt m }>  => <{ CInt {n - m} }>
+  | <{ {Builtin DivideInteger} ⋅ CInt n ⋅ CInt m }> => <{ CInt {n / m} }>
+  | <{ {Builtin QuotientInteger} ⋅ CInt n ⋅ CInt m }> => <{ CInt {n ÷ m} }>
+  | <{ {Builtin RemainderInteger} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin ModInteger} }> => Error <{ unit }> (* TODO *)
 
-  | <{ CInt n == CInt m }> => Some <{ CBool {n =? m} }>
-  | <{ {Builtin LessThanInteger} }> => None
-  | <{ {Builtin LessThanEqualsInteger} }> => None
+  | <{ CInt n == CInt m }> => <{ CBool {n =? m} }>
+  | <{ {Builtin LessThanInteger} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin LessThanEqualsInteger} }> => Error <{ unit }> (* TODO *)
 
   (* ByteString operations *)
-  | <{ {Builtin AppendByteString } ⋅ CBS xs ⋅ CBS ys}> => Some <{ CBS {xs ++ ys} }>
-  | <{ {Builtin ConsByteString } ⋅ CInt n ⋅ CBS xs}> => Some (cons_bytestring n xs)
-  | <{ {Builtin SliceByteString } ⋅ CInt n ⋅ CInt m ⋅ CBS xs}> => Some <{ CBS {slice_list n m xs} }>
-  | <{ {Builtin LengthOfByteString } ⋅ CBS xs}> => Some <{ CInt {Z.of_nat (List.length xs)} }>
-  | <{ {Builtin IndexByteString } ⋅ CBS xs ⋅ CInt n}> => Some (index_bytestring xs n)
-  | <{ {Builtin EqualsByteString} }> => None
-  | <{ {Builtin LessThanByteString} }> => None
-  | <{ {Builtin LessThanEqualsByteString} }> => None
+  | <{ {Builtin AppendByteString } ⋅ CBS xs ⋅ CBS ys}> => <{ CBS {xs ++ ys} }>
+  | <{ {Builtin ConsByteString } ⋅ CInt n ⋅ CBS xs}> => (cons_bytestring n xs)
+  | <{ {Builtin SliceByteString } ⋅ CInt n ⋅ CInt m ⋅ CBS xs}> => <{ CBS {slice_list n m xs} }>
+  | <{ {Builtin LengthOfByteString } ⋅ CBS xs}> => <{ CInt {Z.of_nat (List.length xs)} }>
+  | <{ {Builtin IndexByteString } ⋅ CBS xs ⋅ CInt n}> => (index_bytestring xs n)
+  | <{ {Builtin EqualsByteString} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin LessThanByteString} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin LessThanEqualsByteString} }> => Error <{ unit }> (* TODO *)
 
-  | <{ ifthenelse @ T ⋅ CBool b ⋅ s ⋅ t }> => Some (if b then s else t)
+  | <{ ifthenelse @ T ⋅ CBool b ⋅ s ⋅ t }> => (if b then s else t)
 
   (* Cryptography primitives *)
-  | <{ {Builtin Sha2_256} ⋅ CBS bs }> => Some <{CBS {sha2_256 bs} }>
-  | <{ {Builtin Sha3_256} ⋅ CBS bs }> => Some <{CBS {sha3_256 bs} }>
-  | <{ {Builtin Blake2b_256} }> => None
-  | <{ {Builtin VerifyEd25519Signature} ⋅ CBS xs ⋅ CBS ys ⋅ CBS zs}> => Some <{ CBool {verify_Ed25519_signature xs ys zs} }>
-  | <{ {Builtin VerifyEcdsaSecp256k1Signature} }> => None
-  | <{ {Builtin VerifySchnorrSecp256k1Signature} }> => None
+  | <{ {Builtin Sha2_256} ⋅ CBS bs }> => <{CBS {sha2_256 bs} }>
+  | <{ {Builtin Sha3_256} ⋅ CBS bs }> => <{CBS {sha3_256 bs} }>
+  | <{ {Builtin Blake2b_256} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin VerifyEd25519Signature} ⋅ CBS xs ⋅ CBS ys ⋅ CBS zs}> => <{ CBool {verify_Ed25519_signature xs ys zs} }>
+  | <{ {Builtin VerifyEcdsaSecp256k1Signature} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin VerifySchnorrSecp256k1Signature} }> => Error <{ unit }> (* TODO *)
 
   (* Strings *)
-  | <{ {Builtin AppendString} }> => None
-  | <{ {Builtin EqualsString} }> => None
-  | <{ {Builtin EncodeUtf8} }> => None
-  | <{ {Builtin DecodeUtf8} }> => None
+  | <{ {Builtin AppendString} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin EqualsString} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin EncodeUtf8} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin DecodeUtf8} }> => Error <{ unit }> (* TODO *)
 
-  (* Unit *)
-  | <{ {Builtin ChooseUnit} }> => None
+  (* <{ unit }> *)
+  | <{ {Builtin ChooseUnit} }> => Error <{ unit }> (* TODO *)
   (* Tracing *)
-  | <{ {Builtin Trace} }> => None
+  | <{ {Builtin Trace} }> => Error <{ unit }> (* TODO *)
   (* Pairs *)
-  | <{ {Builtin FstPair} }> => None
-  | <{ {Builtin SndPair} }> => None
+  | <{ {Builtin FstPair} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin SndPair} }> => Error <{ unit }> (* TODO *)
   (* Lists *)
-  | <{ {Builtin ChooseList} }> => None
-  | <{ {Builtin MkCons} }> => None
-  | <{ {Builtin HeadList} }> => None
-  | <{ {Builtin TailList} }> => None
-  | <{ {Builtin NullList} }> => None
+  | <{ {Builtin ChooseList} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin MkCons} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin HeadList} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin TailList} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin NullList} }> => Error <{ unit }> (* TODO *)
   (* Data *)
-  | <{ {Builtin ChooseData} }> => None
-  | <{ {Builtin ConstrData} }> => None
-  | <{ {Builtin MapData} }> => None
-  | <{ {Builtin ListData} }> => None
-  | <{ {Builtin IData} }> => None
-  | <{ {Builtin BData} }> => None
-  | <{ {Builtin UnConstrData} }> => None
-  | <{ {Builtin UnMapData} }> => None
-  | <{ {Builtin UnListData} }> => None
-  | <{ {Builtin UnIData} }> => None
-  | <{ {Builtin UnBData} }> => None
-  | <{ {Builtin EqualsData} }> => None
-  | <{ {Builtin SerialiseData} }> => None
+  | <{ {Builtin ChooseData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin ConstrData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin MapData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin ListData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin IData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin BData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin UnConstrData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin UnMapData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin UnListData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin UnIData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin UnBData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin EqualsData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin SerialiseData} }> => Error <{ unit }> (* TODO *)
   (* Misc monomorphized constructors. *)
-  | <{ {Builtin MkPairData} }> => None
-  | <{ {Builtin MkNilData} }> => None
-  | <{ {Builtin MkNilPairData} }> => None
+  | <{ {Builtin MkPairData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin MkNilData} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin MkNilPairData} }> => Error <{ unit }> (* TODO *)
   (* BLS12_381 operations *)
   (* G1 *)
-  | <{ {Builtin Bls12_381_G1_add} }> => None
-  | <{ {Builtin Bls12_381_G1_neg} }> => None
-  | <{ {Builtin Bls12_381_G1_scalarMul} }> => None
-  | <{ {Builtin Bls12_381_G1_equal} }> => None
-  | <{ {Builtin Bls12_381_G1_hashToGroup} }> => None
-  | <{ {Builtin Bls12_381_G1_compress} }> => None
-  | <{ {Builtin Bls12_381_G1_uncompress} }> => None
+  | <{ {Builtin Bls12_381_G1_add} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G1_neg} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G1_scalarMul} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G1_equal} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G1_hashToGroup} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G1_compress} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G1_uncompress} }> => Error <{ unit }> (* TODO *)
   (* G2 *)
-  | <{ {Builtin Bls12_381_G2_add} }> => None
-  | <{ {Builtin Bls12_381_G2_neg} }> => None
-  | <{ {Builtin Bls12_381_G2_scalarMul} }> => None
-  | <{ {Builtin Bls12_381_G2_equal} }> => None
-  | <{ {Builtin Bls12_381_G2_hashToGroup} }> => None
-  | <{ {Builtin Bls12_381_G2_compress} }> => None
-  | <{ {Builtin Bls12_381_G2_uncompress} }> => None
+  | <{ {Builtin Bls12_381_G2_add} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G2_neg} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G2_scalarMul} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G2_equal} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G2_hashToGroup} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G2_compress} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_G2_uncompress} }> => Error <{ unit }> (* TODO *)
   (* Pairing *)
-  | <{ {Builtin Bls12_381_millerLoop} }> => None
-  | <{ {Builtin Bls12_381_mulMlResult} }> => None
-  | <{ {Builtin Bls12_381_finalVerify} }> => None
+  | <{ {Builtin Bls12_381_millerLoop} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_mulMlResult} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Bls12_381_finalVerify} }> => Error <{ unit }> (* TODO *)
   (* Keccak_256, Blake2b_224 *)
-  | <{ {Builtin Keccak_256} }> => None
-  | <{ {Builtin Blake2b_224} }> => None
+  | <{ {Builtin Keccak_256} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin Blake2b_224} }> => Error <{ unit }> (* TODO *)
   (* Conversions *)
-  | <{ {Builtin IntegerToByteString} }> => None
-  | <{ {Builtin ByteStringToInteger} }> => None
+  | <{ {Builtin IntegerToByteString} }> => Error <{ unit }> (* TODO *)
+  | <{ {Builtin ByteStringToInteger} }> => Error <{ unit }> (* TODO *)
 
-  | _ => None (* TODO*)
+  | _ => Error <{ unit }> (* Unexpected term *)
   end
 .

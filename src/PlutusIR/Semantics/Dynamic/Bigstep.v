@@ -101,14 +101,14 @@ Inductive eval : term -> term -> nat -> Prop :=
       t =[j1]=> v ->
       value v ->
       args_len (Apply vb v) = arity f ->
-      compute_defaultfun (Apply vb v) = Some r ->
+      r = eval_builtin (Apply vb v) ->
       Apply s t =[j]=> r
-  | E_TyInst_Builtin_Full : forall j t T f vb r j0,
+  | E_TyInst_Builtin_Full : forall j t T f vb j0 r,
       j = j0 + 1 ->
       t =[j0]=> vb ->
       applied f vb ->
       args_len (TyInst vb T) = arity f ->
-      compute_defaultfun (TyInst vb T) = Some r ->
+      r = eval_builtin (TyInst vb T) ->
       TyInst t T =[j]=> r
 
   (* Errors and their propagation *)

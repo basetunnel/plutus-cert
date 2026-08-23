@@ -77,10 +77,10 @@ Proof.
 Admitted.
 *)
 
-Lemma alpha__compute_defaultfun {t t' v} :
+Lemma alpha__eval_builtin {t t' r} :
   [] ,, [] ⊢ t ~ t' ->
-  compute_defaultfun t = Some v -> exists v',
-  compute_defaultfun t' = Some v' /\ [] ,, [] ⊢ v ~ v'
+  eval_builtin t = r -> exists r',
+  eval_builtin t' = r' /\ [] ,, [] ⊢ r ~ r'
 .
 Admitted.
 
