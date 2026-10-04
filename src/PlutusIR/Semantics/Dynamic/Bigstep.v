@@ -222,7 +222,7 @@ with eval_bindings_rec : list binding -> term -> term -> nat -> Prop :=
 
   | E_LetRec_TermBind_Strict : forall j bs0 x T bs t0 t1 v1 v2 j1 j2,
       j = j2 + 1 ->
-      Let Rec bs0 (Var x) =[j1]=> v1 ->
+      Let Rec bs0 t0 =[j1]=> v1 ->
       ~ is_error v1 ->
       <{ [ x := v1] {Let Rec bs t0} }> =[j2]=>r v2 WITH bs0 ->
       Let Rec ((TermBind Strict (VarDecl x T) t1) :: bs) t0 =[j]=>r v2 WITH bs0
